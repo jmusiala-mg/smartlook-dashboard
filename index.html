@@ -96,6 +96,44 @@
 
     .last-updated { font-size: 11px; color: var(--muted); }
 
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 32px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+    /* ── STATIC BADGE ── */
+    .static-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #2d2500;
+      border: 1px solid #5a4a00;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--yellow);
+      margin-bottom: 28px;
+    }
+
     /* ── MAIN ── */
     .main {
       padding: 40px 32px;
@@ -201,7 +239,7 @@
 
     /* Welcome form breakdown */
     .form-block {
-      background:var(--surface); border:1px solid var(--border);
+      background: var(--surface); border:1px solid var(--border);
       border-radius:10px; padding:14px 18px;
       min-width:220px; max-width:260px;
     }
@@ -244,7 +282,7 @@
       <p>Merchant Growth · Online Application</p>
     </div>
   </div>
-  <div class="header-right">
+  <div class="header-right" id="liveControls">
     <button class="preset-btn" data-days="30">30 days</button>
     <button class="preset-btn" data-days="90">90 days</button>
     <button class="preset-btn active" data-days="365">12 months</button>
@@ -257,52 +295,122 @@
   </div>
 </header>
 
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="all">All Traffic</button>
+  <button class="tab-btn" data-tab="google">Google</button>
+  <button class="tab-btn" data-tab="meta">Meta</button>
+</div>
+
 <div class="main">
-  <div id="loadingState" class="state-box">
-    <div class="spinner"></div>
-    <div>Loading funnel data…</div>
+
+  <!-- ALL TRAFFIC TAB -->
+  <div id="tab-all">
+    <div id="loadingState" class="state-box">
+      <div class="spinner"></div>
+      <div>Loading funnel data…</div>
+    </div>
+    <div id="errorState" class="state-box" style="display:none">
+      <div style="color:var(--red)" id="errorMsg">Failed to load data.</div>
+    </div>
+    <div id="dashboard" style="display:none">
+      <div class="flowchart" id="flowchart"></div>
+    </div>
   </div>
 
-  <div id="errorState" class="state-box" style="display:none">
-    <div style="color:var(--red)" id="errorMsg">Failed to load data.</div>
+  <!-- GOOGLE TAB -->
+  <div id="tab-google" style="display:none">
+    <div class="static-badge">📅 Static snapshot · Last month · Google traffic only</div>
+    <div class="flowchart" id="flowchart-google"></div>
   </div>
 
-  <div id="dashboard" style="display:none">
-    <div class="flowchart" id="flowchart"></div>
+  <!-- META TAB -->
+  <div id="tab-meta" style="display:none">
+    <div class="static-badge">📅 Static snapshot · Last month · Meta traffic only</div>
+    <div class="flowchart" id="flowchart-meta"></div>
   </div>
+
 </div>
 
 <script>
-  // ── Funnel IDs ──────────────────────────────────────────────
+  // ── Static data ───────────────────────────────────────────────
+  const STATIC = {
+    google: {
+      landed:       99911,
+      yearsInBiz:   60518,
+      annualRev:    51180,
+      completedMQ:  49776,
+      welcomePage:  27590,
+      bizStructure: 6840,
+      bizFunding:   6092,
+      personalInfo: 5623,
+      valueProp:    5261,
+      aboutFlinks:  4950,
+      banking:      3494,
+      processing:   2601,
+      final:        2566,
+      notElig:      8061,
+      notEligSubmit: 499,
+    },
+    meta: {
+      landed:       30526,
+      yearsInBiz:   13407,
+      annualRev:    10098,
+      completedMQ:  10309,
+      welcomePage:  5472,
+      bizStructure: 1570,
+      bizFunding:   1289,
+      personalInfo: 1158,
+      valueProp:    1028,
+      aboutFlinks:  956,
+      banking:      581,
+      processing:   323,
+      final:        321,
+      notElig:      14323,
+      notEligSubmit: 1206,
+    },
+  };
+
+  // ── Funnel IDs (live) ────────────────────────────────────────
   const FUNNELS = {
-    mqMain:         'UmqN6dcsHh',  // Landing → Proceeded after MQ
-    mqSteps:        'tBYofFGFHT',  // Years in Biz → Annual Revenue
-    single:         'akKYsjO8uB',  // Welcome → Final (full eligible journey)
-    welcomeForm:    'mT7yLRa6jR',  // Welcome form field breakdown
-    notEligAge:     'S2zoAmFjwx',  // Not Eligible by Age
-    notEligRev:     'ZftHVUHwlS',  // Not Eligible by Revenue
-    notEligAgeForm: 'f6KLnLZNui',  // Not Eligible by Age form fields
-    notEligRevForm: '5N3ZSCqccw',  // Not Eligible by Revenue form fields
+    mqMain:         'UmqN6dcsHh',
+    mqSteps:        'tBYofFGFHT',
+    single:         'akKYsjO8uB',
+    welcomeForm:    'mT7yLRa6jR',
+    notEligAge:     'S2zoAmFjwx',
+    notEligRev:     'ZftHVUHwlS',
+    notEligAgeForm: 'f6KLnLZNui',
+    notEligRevForm: '5N3ZSCqccw',
   };
 
   const EARLIEST = '2025-02-24';
 
-  // ── Date helpers ─────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────
   const today   = () => new Date().toISOString().split('T')[0];
   const daysAgo = n  => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split('T')[0]; };
+  const fmt  = n      => (n == null ? '—' : Number(n).toLocaleString());
+  const pct  = (a, b) => (!a || !b) ? '—' : (b / a * 100).toFixed(1) + '%';
+  const drop = (a, b) => (!a || !b) ? '—' : ((1 - b / a) * 100).toFixed(1) + '%';
 
-  // ── Format helpers ───────────────────────────────────────────
-  const fmt  = n       => (n == null ? '—' : Number(n).toLocaleString());
-  const pct  = (a, b)  => (!a || !b) ? '—' : (b / a * 100).toFixed(1) + '%';
-  const drop = (a, b)  => (!a || !b) ? '—' : ((1 - b / a) * 100).toFixed(1) + '%';
+  // ── Tab switching ────────────────────────────────────────────
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tab-all').style.display    = tab === 'all'    ? 'block' : 'none';
+      document.getElementById('tab-google').style.display = tab === 'google' ? 'block' : 'none';
+      document.getElementById('tab-meta').style.display   = tab === 'meta'   ? 'block' : 'none';
+      document.getElementById('liveControls').style.display = tab === 'all' ? 'flex' : 'none';
+    });
+  });
 
-  // ── Init date inputs ─────────────────────────────────────────
+  // ── Date controls (live tab) ─────────────────────────────────
   const dateFromEl = document.getElementById('dateFrom');
   const dateToEl   = document.getElementById('dateTo');
   dateFromEl.value = daysAgo(365);
   dateToEl.value   = today();
 
-  // ── Preset buttons ───────────────────────────────────────────
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
@@ -318,7 +426,7 @@
   dateToEl.addEventListener('change', () => loadData());
   document.getElementById('refreshBtn').addEventListener('click', loadData);
 
-  // ── Fetch one funnel via Netlify proxy ───────────────────────
+  // ── Fetch one funnel ─────────────────────────────────────────
   async function fetchFunnel(funnelId, dateFrom, dateTo) {
     const params = new URLSearchParams({ funnelId, dateFrom, dateTo });
     const res = await fetch(`/.netlify/functions/smartlook?${params}`);
@@ -326,7 +434,7 @@
     return res.json();
   }
 
-  // ── Load all funnels in parallel ─────────────────────────────
+  // ── Load live data ───────────────────────────────────────────
   async function loadData() {
     const dateFrom = dateFromEl.value;
     const dateTo   = dateToEl.value;
@@ -343,7 +451,7 @@
         )
       );
       const raw = Object.fromEntries(entries);
-      renderDashboard(raw);
+      renderLive(raw);
 
       document.getElementById('lastUpdated').textContent =
         'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -359,8 +467,8 @@
     }
   }
 
-  // ── Render flowchart ─────────────────────────────────────────
-  function renderDashboard(raw) {
+  // ── Render live flowchart ────────────────────────────────────
+  function renderLive(raw) {
     const mq  = raw.mqMain.funnel?.steps         || [];
     const mqS = raw.mqSteps.funnel?.steps        || [];
     const si  = raw.single.funnel?.steps         || [];
@@ -398,27 +506,26 @@
         <span class="n">${fmt(s.visitorsCount)}</span>
       </div>`).join('');
 
-    document.getElementById('flowchart').innerHTML = `
+    document.getElementById('flowchart').innerHTML = buildLiveHTML(d, wfRows);
+  }
 
+  function buildLiveHTML(d, wfRows) {
+    return `
       <div class="node node-entry">
         <div class="node-lbl">Landed on Application</div>
         <div class="node-num">${fmt(d.landed)}</div>
       </div>
-
       <div class="arrow">
         <div class="arrow-line"></div>
         <div class="arrow-tag">${pct(d.landed, d.yearsInBiz)} start MQ</div>
         <div class="arrow-line" style="height:10px"></div>
         <div class="arrow-head"></div>
       </div>
-
       <div class="branch-row">
-
         <div class="branch-col branch-col-left">
           <div style="padding-top:22px;display:flex;align-items:center;gap:4px;">
             <div class="branch-lbl">Not Eligible by Age</div>
-            <div class="h-line"></div>
-            <div class="h-arr-r"></div>
+            <div class="h-line"></div><div class="h-arr-r"></div>
           </div>
           <div style="height:8px"></div>
           <div class="node node-inelig" style="min-width:185px;max-width:195px;">
@@ -433,7 +540,6 @@
             <div class="node-sub">${pct(d.notEligAge, d.notEligAgeSubmit)} conversion</div>
           </div>
         </div>
-
         <div class="branch-col">
           <div class="node node-mq">
             <div class="node-lbl">Years in Business Selected</div>
@@ -463,11 +569,9 @@
             <div class="node-sub">${pct(d.landed, d.proceededMQ)} of all visitors</div>
           </div>
         </div>
-
         <div class="branch-col branch-col-right">
           <div style="padding-top:110px;display:flex;align-items:center;gap:4px;">
-            <div class="h-arr-l"></div>
-            <div class="h-line"></div>
+            <div class="h-arr-l"></div><div class="h-line"></div>
             <div class="branch-lbl">Not Eligible by Revenue</div>
           </div>
           <div style="height:8px"></div>
@@ -483,22 +587,18 @@
             <div class="node-sub">${pct(d.notEligRev, d.notEligRevSubmit)} conversion</div>
           </div>
         </div>
-
       </div>
-
       <div class="arrow" style="margin-top:8px">
         <div class="arrow-line"></div>
         <div class="arrow-tag">Eligible visitors → application</div>
         <div class="arrow-line" style="height:10px"></div>
         <div class="arrow-head"></div>
       </div>
-
       <div class="node node-eligible">
         <div class="node-lbl">Welcome Page</div>
         <div class="node-num">${fmt(d.welcomePage)}</div>
         <div class="node-sub">Eligible visitors arriving</div>
       </div>
-
       <div class="arrow"><div class="arrow-line"></div></div>
       <div class="drop-callout">
         ⚠️ ${drop(d.welcomePage, d.formStarted)}
@@ -511,32 +611,27 @@
         <div class="arrow-line" style="height:10px"></div>
         <div class="arrow-head"></div>
       </div>
-
       <div class="form-block">
         <div class="form-block-title">Welcome Form — Field by Field</div>
         ${wfRows}
       </div>
-
       <div class="arrow">
         <div class="arrow-line"></div>
         <div class="lead-badge">✓ Lead Captured — ${fmt(d.leadCaptured)}</div>
         <div class="arrow-line" style="height:10px"></div>
         <div class="arrow-head"></div>
       </div>
-
       <div class="node node-app">
         <div class="node-lbl">Business Structure</div>
         <div class="node-num">${fmt(d.bizStructure)}</div>
         <div class="node-sub">${pct(d.welcomePage, d.bizStructure)} of Welcome page visitors</div>
       </div>
-
       ${step('Business Funding',  d.bizFunding,   d.bizStructure)}
       ${step('Personal Info',     d.personalInfo, d.bizFunding)}
       ${step('Value Proposition', d.valueProp,    d.personalInfo)}
       ${step('About Flinks',      d.aboutFlinks,  d.valueProp)}
       ${step('Banking',           d.banking,      d.aboutFlinks, true)}
       ${step('Processing',        d.processing,   d.banking)}
-
       <div class="arrow">
         <div class="arrow-line"></div>
         <div class="arrow-tag">${pct(d.processing, d.final)}</div>
@@ -547,10 +642,114 @@
         <div class="node-lbl">Final — Application Submitted</div>
         <div class="node-num">${fmt(d.final)}</div>
         <div class="node-sub">${pct(d.landed, d.final)} of all visitors</div>
-      </div>
-    `;
+      </div>`;
   }
 
+  // ── Render static flowchart (Google / Meta) ──────────────────
+  function renderStatic(d, containerId) {
+    document.getElementById(containerId).innerHTML = `
+      <div class="node node-entry">
+        <div class="node-lbl">SSA Landing Page</div>
+        <div class="node-num">${fmt(d.landed)}</div>
+      </div>
+      <div class="arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-tag">${pct(d.landed, d.yearsInBiz)} start MQ</div>
+        <div class="arrow-line" style="height:10px"></div>
+        <div class="arrow-head"></div>
+      </div>
+      <div class="branch-row">
+        <div class="branch-col branch-col-left">
+          <div style="padding-top:22px;display:flex;align-items:center;gap:4px;">
+            <div class="branch-lbl">Not Eligible</div>
+            <div class="h-line"></div><div class="h-arr-r"></div>
+          </div>
+          <div style="height:8px"></div>
+          <div class="node node-inelig" style="min-width:185px;max-width:195px;">
+            <div class="node-lbl">Not Eligible Landing Page</div>
+            <div class="node-num">${fmt(d.notElig)}</div>
+            <div class="node-sub">Age or revenue ineligible</div>
+          </div>
+          <div class="side-line"></div>
+          <div class="node node-form" style="min-width:185px;max-width:195px;">
+            <div class="node-lbl">Form Submitted</div>
+            <div class="node-num">${fmt(d.notEligSubmit)}</div>
+            <div class="node-sub">${pct(d.notElig, d.notEligSubmit)} conversion</div>
+          </div>
+        </div>
+        <div class="branch-col">
+          <div class="node node-mq">
+            <div class="node-lbl">Years in Business Selected</div>
+            <div class="node-num">${fmt(d.yearsInBiz)}</div>
+            <div class="node-sub">${pct(d.landed, d.yearsInBiz)} of visitors</div>
+          </div>
+          <div class="arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-tag">${pct(d.yearsInBiz, d.annualRev)} proceed</div>
+            <div class="arrow-line" style="height:10px"></div>
+            <div class="arrow-head"></div>
+          </div>
+          <div class="node node-mq">
+            <div class="node-lbl">Annual Revenue Selected</div>
+            <div class="node-num">${fmt(d.annualRev)}</div>
+            <div class="node-sub">${pct(d.yearsInBiz, d.annualRev)} of Q1 respondents</div>
+          </div>
+          <div class="arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-tag">${pct(d.annualRev, d.completedMQ)} proceed</div>
+            <div class="arrow-line" style="height:10px"></div>
+            <div class="arrow-head"></div>
+          </div>
+          <div class="node node-eligible">
+            <div class="node-lbl">Completed MQ</div>
+            <div class="node-num">${fmt(d.completedMQ)}</div>
+            <div class="node-sub">${pct(d.landed, d.completedMQ)} of all visitors</div>
+          </div>
+        </div>
+        <div class="branch-col branch-col-right"></div>
+      </div>
+      <div class="arrow" style="margin-top:8px">
+        <div class="arrow-line"></div>
+        <div class="arrow-tag">Eligible visitors → application</div>
+        <div class="arrow-line" style="height:10px"></div>
+        <div class="arrow-head"></div>
+      </div>
+      <div class="node node-eligible">
+        <div class="node-lbl">Eligible Welcome Screen</div>
+        <div class="node-num">${fmt(d.welcomePage)}</div>
+        <div class="node-sub">${pct(d.landed, d.welcomePage)} of all visitors</div>
+      </div>
+      <div class="arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-tag">${pct(d.welcomePage, d.bizStructure)} proceed</div>
+        <div class="arrow-line" style="height:10px"></div>
+        <div class="arrow-head"></div>
+      </div>
+      <div class="node node-app">
+        <div class="node-lbl">Business Structure Page</div>
+        <div class="node-num">${fmt(d.bizStructure)}</div>
+        <div class="node-sub">${pct(d.welcomePage, d.bizStructure)} of Welcome visitors</div>
+      </div>
+      ${step('Business Funding',  d.bizFunding,   d.bizStructure)}
+      ${step('Personal Info',     d.personalInfo, d.bizFunding)}
+      ${step('Value Proposition', d.valueProp,    d.personalInfo)}
+      ${step('About Flinks',      d.aboutFlinks,  d.valueProp)}
+      ${step('Banking',           d.banking,      d.aboutFlinks, true)}
+      ${step('Processing',        d.processing,   d.banking)}
+      <div class="arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-tag">${pct(d.processing, d.final)}</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+      <div class="node node-final">
+        <div class="node-lbl">Final — Application Submitted</div>
+        <div class="node-num">${fmt(d.final)}</div>
+        <div class="node-sub">${pct(d.landed, d.final)} of all visitors</div>
+      </div>`;
+  }
+
+  // ── Shared step helper ───────────────────────────────────────
   function step(label, count, prev, warn = false) {
     return `
       <div class="arrow">
@@ -565,7 +764,10 @@
       </div>`;
   }
 
+  // ── Init ─────────────────────────────────────────────────────
   loadData();
+  renderStatic(STATIC.google, 'flowchart-google');
+  renderStatic(STATIC.meta,   'flowchart-meta');
 </script>
 
 </body>

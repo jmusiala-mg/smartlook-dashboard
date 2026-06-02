@@ -26,7 +26,10 @@
       "Bash(curl -s -H \"Authorization: Bearer 47591178bb2a7aa98a0c6f2063082d43d41a32fa5b420be56598c6ad40cf8b99\" \"https://integrations.smartlook.com/reference/getfunneldetail\")",
       "Bash(curl -sv -H \"Authorization: Bearer 47591178bb2a7aa98a0c6f2063082d43d41a32fa5b420be56598c6ad40cf8b99\" \"https://api.eu.smartlook.cloud/api/v1/funnels/UmqN6dcsHh\")",
       "Bash(curl -s -H \"Authorization: Bearer 47591178bb2a7aa98a0c6f2063082d43d41a32fa5b420be56598c6ad40cf8b99\" \"https://api.eu.smartlook.cloud/api/v1/funnels/UmqN6dcsHh?dateFrom=2025-04-24&dateTo=2026-04-24&segmentId=test\")",
-      "Bash(python3 -c \"import json,sys; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")"
+      "Bash(python3 -c \"import json,sys; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
